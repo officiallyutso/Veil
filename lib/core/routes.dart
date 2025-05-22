@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:veil/features/browser/browser_screen.dart';
-import 'package:veil/features/settings/settings_screen.dart';
-import 'package:veil/features/bookmarks/bookmarks_screen.dart';
-import 'package:veil/features/history/history_screen.dart';
-import 'package:veil/features/sessions/sessions_screen.dart';
+import 'package:veil/screens/browser_screen.dart';
+import 'package:veil/screens/settings_screen.dart';
+import 'package:veil/screens/bookmarks_screen.dart';
+import 'package:veil/screens/history_screen.dart';
+import 'package:veil/screens/sessions_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -11,6 +11,8 @@ class AppRoutes {
   static const String bookmarks = '/bookmarks';
   static const String history = '/history';
   static const String sessions = '/sessions';
+  static const String notes = '/notes';
+  static const String receipts = '/receipts';
   
   static Map<String, WidgetBuilder> get routes => {
     home: (context) => const BrowserScreen(),
