@@ -17,6 +17,10 @@ class AppTheme {
     surface: Colors.white,
     onSurface: Colors.black,
   );
+
+  static const ColorScheme darkColorScheme = ColorScheme(
+    brightness: 
+  );
   
   static const ColorScheme darkColorScheme = ColorScheme(
     brightness: Brightness.dark,

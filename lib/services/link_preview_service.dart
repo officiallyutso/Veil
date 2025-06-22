@@ -62,7 +62,7 @@ class LinkPreviewService {
         ? text.substring(0, 5000) 
         : text;
     
-    final result = _sentiment.analysis(sampleText);
+    final result = Sentiment.analysis(sampleText);
     return result['comparative'] as double;
   }
   
