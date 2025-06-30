@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:veil/models/receipt_model.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:veil/services/receipt_extractor_service.dart';
 
 class ReceiptDetailsScreen extends StatelessWidget {
   final Receipt receipt;

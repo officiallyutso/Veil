@@ -10,6 +10,8 @@ class Product {
   final String imageUrl;
   final String productUrl;
   final String merchant;
+
+  String url;
   
   Product({
     required this.name,

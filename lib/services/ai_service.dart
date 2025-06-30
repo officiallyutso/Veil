@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:flutter_gemini/src/models/candidates/candidates.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
 
@@ -72,4 +73,8 @@ class AiService {
       return 'Error generating highlights: $e';
     }
   }
+}
+
+extension on Candidates? {
+  get text => null;
 }
