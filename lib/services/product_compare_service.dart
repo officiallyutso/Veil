@@ -13,6 +13,7 @@ class Product {
 
   String url;
   
+  
   Product({
     required this.name,
     required this.price,
