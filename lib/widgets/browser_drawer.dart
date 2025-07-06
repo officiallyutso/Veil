@@ -66,6 +66,7 @@ class BrowserDrawer extends StatelessWidget {
           ),
           const Divider(),
           ListTile(
+            
             leading: Icon(
               focusModeService.isActive ? Icons.forum : Icons.blur_off,
               color: focusModeService.isActive ? Theme.of(context).colorScheme.primary : null,
