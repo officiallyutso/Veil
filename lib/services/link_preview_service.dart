@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:html/dom.dart' as html_parser;
 import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:sentiment_dart/sentiment_dart.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
 
 class LinkPreviewService {
-  final Sentiment _sentiment = Sentiment();
   
   Future<LinkPreviewData> getLinkPreview(String url) async {
     try {
-      // Fetch metadata
+      // Fetch metadataa
       final metadata = await MetadataFetch.extract(url);
       
       // Fetch page content for additional analysis
@@ -94,6 +94,10 @@ class LinkPreviewService {
     
     return false;
   }
+}
+
+extension on SentimentResult {
+  void operator [](String other) {}
 }
 
 class LinkPreviewData {
