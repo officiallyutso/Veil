@@ -8,20 +8,68 @@ class Product {
   final double price;
   final String currency;
   final String imageUrl;
-  final String productUrl;
+  final String url; // Changed from productUrl to url
   final String merchant;
-
-  String url;
-  
   
   Product({
     required this.name,
     required this.price,
     required this.currency,
     required this.imageUrl,
-    required this.productUrl,
+    required this.url, // Changed from productUrl to url
     required this.merchant,
   });
+  
+  // Optional: Add a getter for backward compatibility
+  String get productUrl => url;
+  
+  // Optional: Add copyWith method for easier object manipulation
+  Product copyWith({
+    String? name,
+    double? price,
+    String? currency,
+    String? imageUrl,
+    String? url,
+    String? merchant,
+  }) {
+    return Product(
+      name: name ?? this.name,
+      price: price ?? this.price,
+      currency: currency ?? this.currency,
+      imageUrl: imageUrl ?? this.imageUrl,
+      url: url ?? this.url,
+      merchant: merchant ?? this.merchant,
+    );
+  }
+  
+  // Optional: Add toString method for debugging
+  @override
+  String toString() {
+    return 'Product(name: $name, price: $price, currency: $currency, url: $url, merchant: $merchant)';
+  }
+  
+  // Optional: Add equality operators
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Product &&
+        other.name == name &&
+        other.price == price &&
+        other.currency == currency &&
+        other.imageUrl == imageUrl &&
+        other.url == url &&
+        other.merchant == merchant;
+  }
+  
+  @override
+  int get hashCode {
+    return name.hashCode ^
+        price.hashCode ^
+        currency.hashCode ^
+        imageUrl.hashCode ^
+        url.hashCode ^
+        merchant.hashCode;
+  }
 }
 
 class ProductCompareService {
@@ -51,7 +99,7 @@ class ProductCompareService {
         price: price,
         currency: currency,
         imageUrl: imageUrl,
-        productUrl: url,
+        url: url, // Changed from productUrl to url
         merchant: merchant,
       );
     } catch (e) {
@@ -68,22 +116,42 @@ class ProductCompareService {
       'h1.product',
       'h1[itemprop="name"]',
       'h1',
+      '[data-testid="product-title"]',
+      '.product-title',
+      '.product-name',
     ];
     
     for (final selector in selectors) {
       final elements = document.querySelectorAll(selector);
       if (elements.isNotEmpty) {
-        return elements.first.text.trim();
+        final text = elements.first.text.trim();
+        if (text.isNotEmpty) {
+          return text;
+        }
       }
     }
     
     // Try meta tags
-    final metaTags = document.querySelectorAll('meta[property="og:title"]');
-    if (metaTags.isNotEmpty) {
-      final content = metaTags.first.attributes['content'];
-      if (content != null && content.isNotEmpty) {
-        return content.trim();
+    final metaSelectors = [
+      'meta[property="og:title"]',
+      'meta[name="twitter:title"]',
+      'meta[property="product:name"]',
+    ];
+    
+    for (final selector in metaSelectors) {
+      final metaTags = document.querySelectorAll(selector);
+      if (metaTags.isNotEmpty) {
+        final content = metaTags.first.attributes['content'];
+        if (content != null && content.trim().isNotEmpty) {
+          return content.trim();
+        }
       }
+    }
+    
+    // Try title tag as last resort
+    final titleElement = document.querySelector('title');
+    if (titleElement != null) {
+      return titleElement.text.trim();
     }
     
     return '';
@@ -98,22 +166,41 @@ class ProductCompareService {
       '[itemprop="price"]',
       '.product-price',
       '.offer-price',
+      '.current-price',
+      '.sale-price',
+      '[data-testid="price"]',
+      '.price-current',
+      '.price-now',
     ];
     
     for (final selector in selectors) {
       final elements = document.querySelectorAll(selector);
       if (elements.isNotEmpty) {
         final priceText = elements.first.text;
-        return _parsePrice(priceText);
+        final price = _parsePrice(priceText);
+        if (price > 0) {
+          return price;
+        }
       }
     }
     
     // Try meta tags
-    final metaTags = document.querySelectorAll('meta[property="product:price:amount"]');
-    if (metaTags.isNotEmpty) {
-      final content = metaTags.first.attributes['content'];
-      if (content != null && content.isNotEmpty) {
-        return double.tryParse(content) ?? 0.0;
+    final metaSelectors = [
+      'meta[property="product:price:amount"]',
+      'meta[property="og:price:amount"]',
+      'meta[name="twitter:data1"]',
+    ];
+    
+    for (final selector in metaSelectors) {
+      final metaTags = document.querySelectorAll(selector);
+      if (metaTags.isNotEmpty) {
+        final content = metaTags.first.attributes['content'];
+        if (content != null && content.isNotEmpty) {
+          final price = double.tryParse(content) ?? 0.0;
+          if (price > 0) {
+            return price;
+          }
+        }
       }
     }
     
@@ -121,11 +208,16 @@ class ProductCompareService {
   }
   
   double _parsePrice(String priceText) {
-    // Remove currency symbols and non-numeric characters
+    if (priceText.isEmpty) return 0.0;
+    
+    // Remove currency symbols and non-numeric characters except . and ,
     final numericText = priceText.replaceAll(RegExp(r'[^\d.,]'), '');
+    
+    if (numericText.isEmpty) return 0.0;
     
     // Handle different decimal separators
     String normalizedText = numericText;
+    
     if (numericText.contains(',') && numericText.contains('.')) {
       // If both . and , are present, the last one is likely the decimal separator
       final lastDotIndex = numericText.lastIndexOf('.');
@@ -138,9 +230,18 @@ class ProductCompareService {
         // Dot is the decimal separator
         normalizedText = numericText.replaceAll(',', '');
       }
-    } else if (numericText.contains(',')) {
-      // Only comma is present, assume it's the decimal separator
-      normalizedText = numericText.replaceAll(',', '.');
+    } else if (numericText.contains(',') && !numericText.contains('.')) {
+      // Only comma is present
+      final commaIndex = numericText.lastIndexOf(',');
+      final afterComma = numericText.substring(commaIndex + 1);
+      
+      // If there are 3 or more digits after comma, it's likely a thousands separator
+      if (afterComma.length >= 3) {
+        normalizedText = numericText.replaceAll(',', '');
+      } else {
+        // Likely a decimal separator
+        normalizedText = numericText.replaceAll(',', '.');
+      }
     }
     
     return double.tryParse(normalizedText) ?? 0.0;
@@ -151,21 +252,33 @@ class ProductCompareService {
     final selectors = [
       'span.currency',
       '[itemprop="priceCurrency"]',
+      '.currency-symbol',
+      '.price-currency',
     ];
     
     for (final selector in selectors) {
       final elements = document.querySelectorAll(selector);
       if (elements.isNotEmpty) {
-        return elements.first.text.trim();
+        final currency = elements.first.text.trim();
+        if (currency.isNotEmpty) {
+          return currency;
+        }
       }
     }
     
     // Try meta tags
-    final metaTags = document.querySelectorAll('meta[property="product:price:currency"]');
-    if (metaTags.isNotEmpty) {
-      final content = metaTags.first.attributes['content'];
-      if (content != null && content.isNotEmpty) {
-        return content.trim();
+    final metaSelectors = [
+      'meta[property="product:price:currency"]',
+      'meta[property="og:price:currency"]',
+    ];
+    
+    for (final selector in metaSelectors) {
+      final metaTags = document.querySelectorAll(selector);
+      if (metaTags.isNotEmpty) {
+        final content = metaTags.first.attributes['content'];
+        if (content != null && content.trim().isNotEmpty) {
+          return content.trim();
+        }
       }
     }
     
@@ -180,47 +293,76 @@ class ProductCompareService {
       'img[itemprop="image"]',
       '.product-image img',
       '#product-image',
+      '.product-photo img',
+      '[data-testid="product-image"]',
+      '.main-image img',
     ];
     
     for (final selector in selectors) {
       final elements = document.querySelectorAll(selector);
       if (elements.isNotEmpty) {
-        final src = elements.first.attributes['src'];
+        final src = elements.first.attributes['src'] ?? 
+                   elements.first.attributes['data-src'];
         if (src != null && src.isNotEmpty) {
-          // Convert relative URL to absolute if needed
-          if (src.startsWith('http')) {
-            return src;
-          } else {
-            final baseUri = Uri.parse(baseUrl);
-            return Uri(
-              scheme: baseUri.scheme,
-              host: baseUri.host,
-              path: src.startsWith('/') ? src : '/${src}',
-            ).toString();
-          }
+          return _makeAbsoluteUrl(src, baseUrl);
         }
       }
     }
     
     // Try meta tags
-    final metaTags = document.querySelectorAll('meta[property="og:image"]');
-    if (metaTags.isNotEmpty) {
-      final content = metaTags.first.attributes['content'];
-      if (content != null && content.isNotEmpty) {
-        return content;
+    final metaSelectors = [
+      'meta[property="og:image"]',
+      'meta[name="twitter:image"]',
+      'meta[property="product:image"]',
+    ];
+    
+    for (final selector in metaSelectors) {
+      final metaTags = document.querySelectorAll(selector);
+      if (metaTags.isNotEmpty) {
+        final content = metaTags.first.attributes['content'];
+        if (content != null && content.isNotEmpty) {
+          return _makeAbsoluteUrl(content, baseUrl);
+        }
       }
     }
     
     return '';
   }
   
+  String _makeAbsoluteUrl(String url, String baseUrl) {
+    if (url.startsWith('http')) {
+      return url;
+    }
+    
+    try {
+      final baseUri = Uri.parse(baseUrl);
+      if (url.startsWith('//')) {
+        return '${baseUri.scheme}:$url';
+      } else if (url.startsWith('/')) {
+        return '${baseUri.scheme}://${baseUri.host}$url';
+      } else {
+        return '${baseUri.scheme}://${baseUri.host}/${url}';
+      }
+    } catch (e) {
+      return url;
+    }
+  }
+  
   String _extractMerchant(Document document, String url) {
     // Try meta tags
-    final metaTags = document.querySelectorAll('meta[property="og:site_name"]');
-    if (metaTags.isNotEmpty) {
-      final content = metaTags.first.attributes['content'];
-      if (content != null && content.isNotEmpty) {
-        return content.trim();
+    final metaSelectors = [
+      'meta[property="og:site_name"]',
+      'meta[name="application-name"]',
+      'meta[name="apple-mobile-web-app-title"]',
+    ];
+    
+    for (final selector in metaSelectors) {
+      final metaTags = document.querySelectorAll(selector);
+      if (metaTags.isNotEmpty) {
+        final content = metaTags.first.attributes['content'];
+        if (content != null && content.trim().isNotEmpty) {
+          return content.trim();
+        }
       }
     }
     
@@ -235,12 +377,14 @@ class ProductCompareService {
       // Get the first part of the domain (before the first dot)
       final parts = domain.split('.');
       if (parts.isNotEmpty) {
-        return parts[0].substring(0, 1).toUpperCase() + parts[0].substring(1);
+        final merchantName = parts[0];
+        return merchantName.substring(0, 1).toUpperCase() + 
+               merchantName.substring(1).toLowerCase();
       }
       
       return domain;
     } catch (e) {
-      return '';
+      return 'Unknown';
     }
   }
   
@@ -248,7 +392,15 @@ class ProductCompareService {
     final alternatives = <Product>[];
     
     // Search for the product on popular shopping sites
-    final searchTerms = product.name.split(' ').take(5).join(' ');
+    final searchTerms = product.name
+        .split(' ')
+        .where((term) => term.length > 2) // Filter out short words
+        .take(5)
+        .join(' ');
+    
+    if (searchTerms.isEmpty) {
+      return alternatives;
+    }
     
     // Define search URLs for different merchants
     final searchUrls = [
@@ -260,18 +412,29 @@ class ProductCompareService {
     // Limit to 3 searches to avoid overloading
     for (int i = 0; i < searchUrls.length && alternatives.length < 5; i++) {
       try {
-        final url = searchUrls[i];
-        final response = await http.get(Uri.parse(url));
+        final searchUrl = searchUrls[i];
+        final response = await http.get(
+          Uri.parse(searchUrl),
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        );
         
         if (response.statusCode == 200) {
           final document = html_parser.parse(response.body);
           
           // Extract product listings (simplified - would need specific selectors for each site)
-          final productElements = document.querySelectorAll('.product, .item, .result');
+          final productElements = document.querySelectorAll(
+            '.product, .item, .result, [data-component-type="s-search-result"]'
+          );
           
           for (final element in productElements.take(2)) { // Limit to 2 products per site
-            final nameElement = element.querySelector('.title, .name, h2');
-            final priceElement = element.querySelector('.price');
+            final nameElement = element.querySelector(
+              '.title, .name, h2, .product-title, [data-cy="listing-row-title"]'
+            );
+            final priceElement = element.querySelector(
+              '.price, .a-price-whole, .notranslate'
+            );
             final linkElement = element.querySelector('a');
             
             if (nameElement != null && priceElement != null && linkElement != null) {
@@ -281,17 +444,17 @@ class ProductCompareService {
               
               if (name.isNotEmpty && price > 0 && href != null) {
                 // Convert relative URL to absolute if needed
-                final productUrl = href.startsWith('http') ? href : 'https://${Uri.parse(url).host}$href';
+                final productUrl = _makeAbsoluteUrl(href, searchUrl);
                 
-                // Only add if price is lower than original
-                if (price < product.price) {
+                // Only add if price is different from original (could be higher or lower)
+                if ((price - product.price).abs() > 0.01) { // Allow small price differences
                   alternatives.add(Product(
                     name: name,
                     price: price,
                     currency: product.currency, // Assume same currency
                     imageUrl: '', // Would need to extract this
-                    productUrl: productUrl,
-                    merchant: Uri.parse(url).host.replaceAll('www.', ''),
+                    url: productUrl, // Changed from productUrl to url
+                    merchant: Uri.parse(searchUrl).host.replaceAll('www.', ''),
                   ));
                 }
               }
