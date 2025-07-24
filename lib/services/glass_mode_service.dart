@@ -24,7 +24,6 @@ class GlassModeService extends ChangeNotifier {
     }
   }
 
-  
   Future<void> disableGlassMode() async {
     try {
       if (_isActive) {
@@ -151,8 +150,12 @@ class GlassModeService extends ChangeNotifier {
       });
     })();
   ''';
-  
+
   Future<void> injectBlurScript(WebViewController controller) async {
-    await controller.runJavaScript(blurSensitiveContentScript);
+    try {
+      await controller.runJavaScript(blurSensitiveContentScript);
+    } catch (e) {
+      print('Failed to inject blur script: $e');
+    }
   }
 }
