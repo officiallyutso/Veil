@@ -2,18 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-class GlassModeService {
+class GlassModeService extends ChangeNotifier {
   bool _isActive = false;
-  
+  bool _isSupported = true;
+
   bool get isActive => _isActive;
-  
+  bool get isSupported => _isSupported;
+
   Future<void> enableGlassMode() async {
-    if (!_isActive) {
-      // Prevent screenshots
-      await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-      _isActive = true;
+    try {
+      if (!_isActive && _isSupported) {
+        await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+        _isActive = true;
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Failed to enable glass mode: $e');
+      _isSupported = false;
+      notifyListeners();
+      // Fallback: show user notification that feature isn't available
     }
   }
+
   
   Future<void> disableGlassMode() async {
     if (_isActive) {
