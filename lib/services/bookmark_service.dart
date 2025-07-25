@@ -1,7 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
-import 'package:veil/models/bookmark_model.dart';
+
+class Bookmark {
+  final String id;
+  final String title;
+  final String url;
+  final String? favicon;
+  final String folderId;
+  final DateTime createdAt;
+  final List<String> tags;
+
+  Bookmark({
+    required this.id,
+    required this.title,
+    required this.url,
+    this.favicon,
+    required this.folderId,
+    required this.createdAt,
+    this.tags = const [],
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'url': url,
+    'favicon': favicon,
+    'folderId': folderId,
+    'createdAt': createdAt.toIso8601String(),
+    'tags': tags,
+  };
+
+  factory Bookmark.fromJson(Map<String, dynamic> json) => Bookmark(
+    id: json['id'],
+    title: json['title'],
+    url: json['url'],
+    favicon: json['favicon'],
+    folderId: json['folderId'],
+    createdAt: DateTime.parse(json['createdAt']),
+    tags: List<String>.from(json['tags'] ?? []),
+  );
+}
+
+class BookmarkFolder {
+  final String id;
+  final String name;
+  final String? parentId;
+  final DateTime createdAt;
+
+  BookmarkFolder({
+    required this.id,
+    required this.name,
+    this.parentId,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'parentId': parentId,
+    'createdAt': createdAt.toIso8601String(),
+  };
+
+  factory BookmarkFolder.fromJson(Map<String, dynamic> json) => BookmarkFolder(
+    id: json['id'],
+    name: json['name'],
+    parentId: json['parentId'],
+    createdAt: DateTime.parse(json['createdAt']),
+  );
+}
 
 class BookmarkService extends ChangeNotifier {
   static const String _bookmarksBoxName = 'bookmarks';
