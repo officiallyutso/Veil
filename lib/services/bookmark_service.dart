@@ -74,213 +74,178 @@ class BookmarkService extends ChangeNotifier {
   static const String _bookmarksBoxName = 'bookmarks';
   static const String _foldersBoxName = 'bookmark_folders';
   
-  late Box<Bookmark> _bookmarksBox;
-  late Box<BookmarkFolder> _foldersBox;
+  late Box _bookmarksBox;
+  late Box _foldersBox;
   late List<Bookmark> _bookmarks;
   late List<BookmarkFolder> _folders;
   final _uuid = Uuid();
-  
+
   List<Bookmark> get bookmarks => _bookmarks;
   List<BookmarkFolder> get folders => _folders;
-  
+
   Future<void> initialize() async {
-    // Register adapters if not registered
-    if (!Hive.isAdapterRegistered(4)) {
-      Hive.registerAdapter(BookmarkAdapter());
-    }
+    _bookmarksBox = await Hive.openBox(_bookmarksBoxName);
+    _foldersBox = await Hive.openBox(_foldersBoxName);
     
-    if (!Hive.isAdapterRegistered(5)) {
-      Hive.registerAdapter(BookmarkFolderAdapter());
-    }
+    _loadData();
+    await _ensureDefaultFolder();
+  }
+
+  void _loadData() {
+    _bookmarks = _bookmarksBox.values
+        .map((data) => Bookmark.fromJson(Map<String, dynamic>.from(data)))
+        .toList();
     
-    // Open boxes
-    _bookmarksBox = await Hive.openBox<Bookmark>(_bookmarksBoxName);
-    _foldersBox = await Hive.openBox<BookmarkFolder>(_foldersBoxName);
+    _folders = _foldersBox.values
+        .map((data) => BookmarkFolder.fromJson(Map<String, dynamic>.from(data)))
+        .toList();
     
-    // Load bookmarks and folders
-    _bookmarks = _bookmarksBox.values.toList();
-    _folders = _foldersBox.values.toList();
-    
-    // Create default folder if none exists
+    _bookmarks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  Future<void> _ensureDefaultFolder() async {
     if (_folders.isEmpty) {
-      await _createDefaultFolder();
+      await createFolder('Default', null);
     }
   }
-  
-  Future<void> _createDefaultFolder() async {
-    final id = _uuid.v4();
-    final folder = BookmarkFolder(
-      id: id,
-      name: 'Bookmarks',
-    );
-    
-    await _foldersBox.put(id, folder);
-    _folders = _foldersBox.values.toList();
-  }
-  
-  Future<void> addBookmark(String url, String title, {String favicon = '', String? folderId}) async {
-    final id = _uuid.v4();
-    final bookmark = Bookmark(
-      id: id,
-      url: url,
-      title: title.isNotEmpty ? title : url,
-      favicon: favicon,
-      folderId: folderId ?? _folders.first.id,
-    );
-    
-    await _bookmarksBox.put(id, bookmark);
-    
-    _bookmarks = _bookmarksBox.values.toList();
-    
-    notifyListeners();
-  }
-  
-  Future<void> updateBookmark(Bookmark bookmark) async {
-    await _bookmarksBox.put(bookmark.id, bookmark);
-    
-    _bookmarks = _bookmarksBox.values.toList();
-    
-    notifyListeners();
-  }
-  
-  Future<void> deleteBookmark(String id) async {
-    await _bookmarksBox.delete(id);
-    
-    _bookmarks = _bookmarksBox.values.toList();
-    
-    notifyListeners();
-  }
-  
-  Future<void> addFolder(String name, {String? parentId}) async {
+
+  Future<String> createFolder(String name, String? parentId) async {
     final id = _uuid.v4();
     final folder = BookmarkFolder(
       id: id,
       name: name,
       parentId: parentId,
+      createdAt: DateTime.now(),
     );
     
-    await _foldersBox.put(id, folder);
+    await _foldersBox.put(id, folder.toJson());
+    _loadData();
+    notifyListeners();
+    return id;
+  }
+
+  Future<void> addBookmark({
+    required String title,
+    required String url,
+    String? favicon,
+    String? folderId,
+    List<String> tags = const [],
+  }) async {
+    folderId ??= _folders.first.id; // Use default folder if none specified
     
-    _folders = _foldersBox.values.toList();
+    // Check for duplicates
+    final existing = _bookmarks.firstWhere(
+      (b) => b.url == url,
+      orElse: () => Bookmark(id: '', title: '', url: '', folderId: '', createdAt: DateTime.now()),
+    );
     
+    if (existing.id.isNotEmpty) {
+      // Update existing bookmark
+      await updateBookmark(existing.id, title: title, tags: tags);
+      return;
+    }
+
+    final id = _uuid.v4();
+    final bookmark = Bookmark(
+      id: id,
+      title: title,
+      url: url,
+      favicon: favicon,
+      folderId: folderId,
+      createdAt: DateTime.now(),
+      tags: tags,
+    );
+    
+    await _bookmarksBox.put(id, bookmark.toJson());
+    _loadData();
     notifyListeners();
   }
-  
-  Future<void> updateFolder(BookmarkFolder folder) async {
-    await _foldersBox.put(folder.id, folder);
+
+  Future<void> updateBookmark(
+    String id, {
+    String? title,
+    String? url,
+    String? favicon,
+    String? folderId,
+    List<String>? tags,
+  }) async {
+    final existing = _bookmarks.firstWhere((b) => b.id == id);
+    final updated = Bookmark(
+      id: id,
+      title: title ?? existing.title,
+      url: url ?? existing.url,
+      favicon: favicon ?? existing.favicon,
+      folderId: folderId ?? existing.folderId,
+      createdAt: existing.createdAt,
+      tags: tags ?? existing.tags,
+    );
     
-    _folders = _foldersBox.values.toList();
-    
+    await _bookmarksBox.put(id, updated.toJson());
+    _loadData();
     notifyListeners();
   }
-  
+
+  Future<void> deleteBookmark(String id) async {
+    await _bookmarksBox.delete(id);
+    _loadData();
+    notifyListeners();
+  }
+
   Future<void> deleteFolder(String id) async {
-    // Move bookmarks in this folder to the default folder
-    final defaultFolderId = _folders.first.id;
-    final bookmarksInFolder = _bookmarks.where((b) => b.folderId == id).toList();
-    
-    for (var bookmark in bookmarksInFolder) {
-      bookmark.folderId = defaultFolderId;
-      await _bookmarksBox.put(bookmark.id, bookmark);
+    // Move bookmarks to default folder
+    final defaultFolder = _folders.first;
+    for (final bookmark in _bookmarks) {
+      if (bookmark.folderId == id) {
+        await updateBookmark(bookmark.id, folderId: defaultFolder.id);
+      }
     }
     
-    // Delete the folder
     await _foldersBox.delete(id);
-    
-    _folders = _foldersBox.values.toList();
-    _bookmarks = _bookmarksBox.values.toList();
-    
+    _loadData();
     notifyListeners();
   }
-  
+
   List<Bookmark> getBookmarksInFolder(String folderId) {
     return _bookmarks.where((b) => b.folderId == folderId).toList();
   }
-  
-  bool isBookmarked(String url) {
-    return _bookmarks.any((b) => b.url == url);
+
+  List<Bookmark> searchBookmarks(String query) {
+    if (query.isEmpty) return _bookmarks;
+    
+    final lowercaseQuery = query.toLowerCase();
+    return _bookmarks.where((bookmark) {
+      return bookmark.title.toLowerCase().contains(lowercaseQuery) ||
+             bookmark.url.toLowerCase().contains(lowercaseQuery) ||
+             bookmark.tags.any((tag) => tag.toLowerCase().contains(lowercaseQuery));
+    }).toList();
   }
-  
-  Bookmark? getBookmarkByUrl(String url) {
+
+  Future<Map<String, dynamic>> exportBookmarks() async {
+    return {
+      'folders': _folders.map((f) => f.toJson()).toList(),
+      'bookmarks': _bookmarks.map((b) => b.toJson()).toList(),
+      'exportedAt': DateTime.now().toIso8601String(),
+    };
+  }
+
+  Future<void> importBookmarks(Map<String, dynamic> data) async {
     try {
-      return _bookmarks.firstWhere((b) => b.url == url);
+      final folders = data['folders'] as List;
+      final bookmarks = data['bookmarks'] as List;
+      
+      for (final folderData in folders) {
+        await _foldersBox.put(folderData['id'], folderData);
+      }
+      
+      for (final bookmarkData in bookmarks) {
+        await _bookmarksBox.put(bookmarkData['id'], bookmarkData);
+      }
+      
+      _loadData();
+      notifyListeners();
     } catch (e) {
-      return null;
+      print('Error importing bookmarks: $e');
+      throw Exception('Failed to import bookmarks');
     }
-  }
-}
-
-// These adapter classes will be generated by build_runner
-class BookmarkAdapter extends TypeAdapter<Bookmark> {
-  @override
-  final int typeId = 4;
-
-  @override
-  Bookmark read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
-    };
-    
-    return Bookmark(
-      id: fields[0] as String,
-      url: fields[1] as String,
-      title: fields[2] as String,
-      favicon: fields[3] as String,
-      createdAt: fields[4] as DateTime,
-      folderId: fields[5] as String?,
-    );
-  }
-
-  @override
-  void write(BinaryWriter writer, Bookmark obj) {
-    writer
-      ..writeByte(6)
-      ..writeByte(0)
-      ..write(obj.id)
-      ..writeByte(1)
-      ..write(obj.url)
-      ..writeByte(2)
-      ..write(obj.title)
-      ..writeByte(3)
-      ..write(obj.favicon)
-      ..writeByte(4)
-      ..write(obj.createdAt)
-      ..writeByte(5)
-      ..write(obj.folderId);
-  }
-}
-
-class BookmarkFolderAdapter extends TypeAdapter<BookmarkFolder> {
-  @override
-  final int typeId = 5;
-
-  @override
-  BookmarkFolder read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
-    };
-    
-    return BookmarkFolder(
-      id: fields[0] as String,
-      name: fields[1] as String,
-      parentId: fields[2] as String?,
-      createdAt: fields[3] as DateTime,
-    );
-  }
-
-  @override
-  void write(BinaryWriter writer, BookmarkFolder obj) {
-    writer
-      ..writeByte(4)
-      ..writeByte(0)
-      ..write(obj.id)
-      ..writeByte(1)
-      ..write(obj.name)
-      ..writeByte(2)
-      ..write(obj.parentId)
-      ..writeByte(3)
-      ..write(obj.createdAt);
   }
 }
