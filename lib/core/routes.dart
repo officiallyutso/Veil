@@ -16,9 +16,7 @@ class AppRoutes {
   
   static Map<String, WidgetBuilder> get routes => {
     home: (context) => const BrowserScreen(),
-    settings: (context) => const SettingsScreen(),
     bookmarks: (context) => const BookmarksScreen(),
     history: (context) => const HistoryScreen(),
-    sessions: (context) => const SessionsScreen(),
   };
 }

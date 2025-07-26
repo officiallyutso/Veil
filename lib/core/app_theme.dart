@@ -19,8 +19,14 @@ class AppTheme {
   );
 
   static const ColorScheme darkColorScheme = ColorScheme(
-    brightness: 
-  );
+    primary: Colors.white, 
+    onPrimary: Colors.white, 
+    secondary: Colors.white, 
+    onSecondary: Colors.white, 
+    error: Colors.white, 
+    onError: Colors.white, 
+    surface: Colors.white, 
+    onSurface: Colors.white, brightness: null);
   
   static const ColorScheme darkColorScheme = ColorScheme(
     brightness: Brightness.dark,
