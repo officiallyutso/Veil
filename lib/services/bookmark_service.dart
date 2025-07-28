@@ -124,7 +124,7 @@ class BookmarkService extends ChangeNotifier {
     return id;
   }
 
-  Future<void> addBookmark({
+  Future<void> addBookmark(String text, String text, {
     required String title,
     required String url,
     String? favicon,
