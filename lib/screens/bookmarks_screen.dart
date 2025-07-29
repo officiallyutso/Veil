@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:veil/models/bookmark_model.dart';
-import 'package:veil/services/bookmark_service.dart';
+import 'package:veil/services/bookmark_service.dart' hide Bookmark;
 
 class BookmarksScreen extends StatefulWidget {
   const BookmarksScreen({super.key});
@@ -118,60 +118,52 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
       itemBuilder: (context, index) {
         final bookmark = bookmarksInFolder[index];
         
-        return ListTile(
-          leading: bookmark.favicon.isNotEmpty
-              ? Image.network(
-                  bookmark.favicon,
-                  width: 24,
-                  height: 24,
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.bookmark),
-                )
-              : const Icon(Icons.bookmark),
-          title: Text(bookmark.title),
-          subtitle: Text(
-            bookmark.url,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          onTap: () {
-            // Return the URL to the browser screen
-            Navigator.pop(context, bookmark.url);
-          },
-          trailing: PopupMenuButton<String>(
-            onSelected: (value) {
-              switch (value) {
-                case 'edit':
-                  _showEditBookmarkDialog(context, bookmark);
-                  break;
-                case 'delete':
-                  _showDeleteBookmarkDialog(context, bookmark);
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit),
-                    SizedBox(width: 8),
-                    Text('Edit'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete),
-                    SizedBox(width: 8),
-                    Text('Delete'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
+      //   return ListTile(
+      //     leading: bookmark.favicon!.isNotEmpty
+      //         ? Image.network(
+                  
+      //             width: 24,
+      //             height: 24,
+      //             errorBuilder: (context, error, stackTrace) => const Icon(Icons.bookmark),
+      //           )
+      //         : const Icon(Icons.bookmark),
+      //     title: Text(bookmark.title),
+      //     subtitle: Text(
+      //       bookmark.url,
+      //       maxLines: 1,
+      //       overflow: TextOverflow.ellipsis,
+      //     ),
+      //     onTap: () {
+      //       // Return the URL to the browser screen
+      //       Navigator.pop(context, bookmark.url);
+      //     },
+      //     trailing: PopupMenuButton<String>(
+      //       onSelected: (value) {
+      //       },
+      //       itemBuilder: (context) => [
+      //         const PopupMenuItem(
+      //           value: 'edit',
+      //           child: Row(
+      //             children: [
+      //               Icon(Icons.edit),
+      //               SizedBox(width: 8),
+      //               Text('Edit'),
+      //             ],
+      //           ),
+      //         ),
+      //         const PopupMenuItem(
+      //           value: 'delete',
+      //           child: Row(
+      //             children: [
+      //               Icon(Icons.delete),
+      //               SizedBox(width: 8),
+      //               Text('Delete'),
+      //             ],
+      //           ),
+      //         ),
+      //       ],
+      //     ),
+      //   );
       },
     );
   }
@@ -243,7 +235,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                     bookmarkService.addBookmark(
                       urlController.text,
                       titleController.text,
-                      folderId: selectedFolderId,
+                      folderId: selectedFolderId, title: '', url: '',
                     );
                     Navigator.pop(context);
                   }
@@ -328,7 +320,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                       folderId: selectedFolderId,
                       createdAt: bookmark.createdAt,
                     );
-                    bookmarkService.updateBookmark(updatedBookmark);
+                    bookmarkService.updateBookmark(updatedBookmark as String);
                     Navigator.pop(context);
                   }
                 },
@@ -396,7 +388,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               return ElevatedButton(
                 onPressed: () {
                   if (nameController.text.isNotEmpty) {
-                    bookmarkService.addFolder(nameController.text);
                     Navigator.pop(context);
                   }
                 },
