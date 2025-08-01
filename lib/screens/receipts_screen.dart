@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:veil/models/receipt_model.dart' as models;
+import 'package:veil/services/receipt_extractor_service.dart' as extractor;
 import 'package:veil/models/receipt_model.dart';
 import 'package:veil/services/receipt_extractor_service.dart';
 import 'package:share_plus/share_plus.dart';
