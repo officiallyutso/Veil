@@ -232,11 +232,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                   if (titleController.text.isNotEmpty && 
                       urlController.text.isNotEmpty && 
                       selectedFolderId != null) {
-                    bookmarkService.addBookmark(
-                      urlController.text,
-                      titleController.text,
-                      folderId: selectedFolderId, title: '', url: '',
-                    );
                     Navigator.pop(context);
                   }
                 },

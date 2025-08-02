@@ -124,42 +124,7 @@ class BookmarkService extends ChangeNotifier {
     return id;
   }
 
-  Future<void> addBookmark(String text, String text, {
-    required String title,
-    required String url,
-    String? favicon,
-    String? folderId,
-    List<String> tags = const [],
-  }) async {
-    folderId ??= _folders.first.id; // Use default folder if none specified
-    
-    // Check for duplicates
-    final existing = _bookmarks.firstWhere(
-      (b) => b.url == url,
-      orElse: () => Bookmark(id: '', title: '', url: '', folderId: '', createdAt: DateTime.now()),
-    );
-    
-    if (existing.id.isNotEmpty) {
-      // Update existing bookmark
-      await updateBookmark(existing.id, title: title, tags: tags);
-      return;
-    }
-
-    final id = _uuid.v4();
-    final bookmark = Bookmark(
-      id: id,
-      title: title,
-      url: url,
-      favicon: favicon,
-      folderId: folderId,
-      createdAt: DateTime.now(),
-      tags: tags,
-    );
-    
-    await _bookmarksBox.put(id, bookmark.toJson());
-    _loadData();
-    notifyListeners();
-  }
+  
 
   Future<void> updateBookmark(
     String id, {
