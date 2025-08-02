@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:veil/models/receipt_model.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:veil/services/receipt_extractor_service.dart';
+import 'package:veil/models/receipt_model.dart';
 
 class ReceiptDetailsScreen extends StatelessWidget {
   final Receipt receipt;
-  
-  const ReceiptDetailsScreen({super.key, required this.receipt});
+
+  const ReceiptDetailsScreen({Key? key, required this.receipt}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(symbol: '\$');
-    
     return Scaffold(
       appBar: AppBar(
         title: Text('Receipt from ${receipt.merchant}'),
@@ -36,19 +34,13 @@ class ReceiptDetailsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      receipt.merchant,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
+                    Text(receipt.merchant, style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         const Icon(Icons.calendar_today, size: 16),
                         const SizedBox(width: 8),
-                        Text(
-                          receipt.date,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
+                        Text(receipt.date, style: Theme.of(context).textTheme.bodyLarge),
                       ],
                     ),
                     if (receipt.orderNumber.isNotEmpty) ...[
@@ -57,10 +49,7 @@ class ReceiptDetailsScreen extends StatelessWidget {
                         children: [
                           const Icon(Icons.receipt, size: 16),
                           const SizedBox(width: 8),
-                          Text(
-                            'Order #: ${receipt.orderNumber}',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
+                          Text('Order #: ${receipt.orderNumber}', style: Theme.of(context).textTheme.bodyLarge),
                         ],
                       ),
                     ],
@@ -75,10 +64,7 @@ class ReceiptDetailsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Items',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+                    Text('Items', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 8),
                     const Divider(),
                     ...receipt.items.map((item) => Padding(
@@ -86,18 +72,9 @@ class ReceiptDetailsScreen extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            child: Text(
-                              item.name,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
-                          Text(
-                            currencyFormat.format(item.price),
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          Expanded(child: Text(item.name, style: Theme.of(context).textTheme.bodyMedium)),
+                          Text(currencyFormat.format(item.price),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
                         ],
                       ),
                     )),
@@ -105,16 +82,9 @@ class ReceiptDetailsScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Total',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        Text(
-                          currencyFormat.format(receipt.total),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        Text('Total', style: Theme.of(context).textTheme.titleMedium),
+                        Text(currencyFormat.format(receipt.total),
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ],
@@ -128,25 +98,16 @@ class ReceiptDetailsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Receipt Information',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+                    Text('Receipt Information', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 8),
                     ListTile(
                       title: const Text('Extracted Date'),
-                      subtitle: Text(
-                        DateFormat('MMMM d, yyyy, h:mm a').format(receipt.extractedAt),
-                      ),
+                      subtitle: Text(DateFormat('MMMM d, yyyy, h:mm a').format(receipt.extractedAt)),
                       leading: const Icon(Icons.access_time),
                     ),
                     ListTile(
                       title: const Text('Source URL'),
-                      subtitle: Text(
-                        receipt.sourceUrl,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      subtitle: Text(receipt.sourceUrl, maxLines: 1, overflow: TextOverflow.ellipsis),
                       leading: const Icon(Icons.link),
                       onTap: () {
                         Clipboard.setData(ClipboardData(text: receipt.sourceUrl));
@@ -164,23 +125,17 @@ class ReceiptDetailsScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   void _shareReceipt(Receipt receipt) {
     final currencyFormat = NumberFormat.currency(symbol: '\$');
-    
     final receiptText = '''
 Receipt from ${receipt.merchant}
 Date: ${receipt.date}
 ${receipt.orderNumber.isNotEmpty ? 'Order #: ${receipt.orderNumber}\n' : ''}
 Items:
 ${receipt.items.map((item) => '- ${item.name}: ${currencyFormat.format(item.price)}').join('\n')}
-
 Total: ${currencyFormat.format(receipt.total)}
 ''';
-    
-    Share.share(
-      receiptText,
-      subject: 'Receipt from ${receipt.merchant}',
-    );
+    Share.share(receiptText, subject: 'Receipt from ${receipt.merchant}');
   }
 }

@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:veil/models/receipt_model.dart';
-import 'package:veil/services/receipt_extractor_service.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:veil/models/receipt_model.dart';
 
 class ReceiptsScreen extends StatefulWidget {
-  const ReceiptsScreen({super.key});
+  const ReceiptsScreen({Key? key}) : super(key: key);
 
   @override
   State<ReceiptsScreen> createState() => _ReceiptsScreenState();
@@ -18,7 +17,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
   String _searchQuery = '';
   List<Receipt> _receipts = [];
   bool _isLoading = true;
-  
+
   @override
   void initState() {
     super.initState();
@@ -30,47 +29,41 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
     });
     _loadReceipts();
   }
-  
+
   Future<void> _loadReceipts() async {
-    setState(() {
-      _isLoading = true;
-    });
-    
-    final receiptService = Provider.of<ReceiptExtractorService>(context, listen: false);
+    setState(() { _isLoading = true; });
+    final receiptService = Provider.of<dynamic>(context, listen: false); // Use your actual service type here
     final receipts = await receiptService.getAllReceipts();
-    
     setState(() {
-      _receipts = receipts;
+      _receipts = List<Receipt>.from(receipts);
       _isLoading = false;
     });
   }
-  
+
   void _filterReceipts() {
     if (_searchQuery.isEmpty) {
       _loadReceipts();
       return;
     }
-    
     final query = _searchQuery.toLowerCase();
-    final receiptService = Provider.of<ReceiptExtractorService>(context, listen: false);
-    
+    final receiptService = Provider.of<dynamic>(context, listen: false); // Use your actual service type here
     receiptService.getAllReceipts().then((allReceipts) {
       setState(() {
-        _receipts = allReceipts.where((receipt) {
+        _receipts = List<Receipt>.from(allReceipts).where((receipt) {
           return receipt.merchant.toLowerCase().contains(query) ||
-                 receipt.orderNumber.toLowerCase().contains(query) ||
-                 receipt.items.any((item) => item.name.toLowerCase().contains(query));
+              receipt.orderNumber.toLowerCase().contains(query) ||
+              receipt.items.any((item) => item.name.toLowerCase().contains(query));
         }).toList();
       });
     });
   }
-  
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,16 +86,9 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
               decoration: InputDecoration(
                 labelText: 'Search Receipts',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                        },
-                      )
+                    ? IconButton(icon: const Icon(Icons.clear), onPressed: () { _searchController.clear(); })
                     : null,
               ),
             ),
@@ -111,13 +97,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _receipts.isEmpty
-                    ? Center(
-                        child: Text(
-                          _searchQuery.isEmpty
-                              ? 'No receipts found'
-                              : 'No results found for "$_searchQuery"',
-                        ),
-                      )
+                    ? Center(child: Text(_searchQuery.isEmpty ? 'No receipts found' : 'No results found for "$_searchQuery"'))
                     : ListView.builder(
                         itemCount: _receipts.length,
                         itemBuilder: (context, index) {
@@ -130,11 +110,10 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
       ),
     );
   }
-  
+
   Widget _buildReceiptCard(BuildContext context, Receipt receipt) {
     final dateFormat = DateFormat('MMM d, yyyy');
     final currencyFormat = NumberFormat.currency(symbol: '\$');
-    
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
@@ -147,46 +126,22 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: Text(
-                      receipt.merchant,
-                      style: Theme.of(context).textTheme.titleMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Text(
-                    currencyFormat.format(receipt.total),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Expanded(child: Text(receipt.merchant, style: Theme.of(context).textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  Text(currencyFormat.format(receipt.total), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 8),
               if (receipt.orderNumber.isNotEmpty)
-                Text(
-                  'Order #: ${receipt.orderNumber}',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+                Text('Order #: ${receipt.orderNumber}', style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 4),
-              Text(
-                'Date: ${receipt.date}',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+              Text('Date: ${receipt.date}', style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 8),
-              Text(
-                '${receipt.items.length} items',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              Text('${receipt.items.length} items', style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(
-                    'Extracted: ${dateFormat.format(receipt.extractedAt)}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text('Extracted: ${dateFormat.format(receipt.extractedAt)}', style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.more_vert),
@@ -202,15 +157,11 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
       ),
     );
   }
-  
+
   void _navigateToReceiptDetails(BuildContext context, Receipt receipt) {
-    Navigator.pushNamed(
-      context,
-      '/receipt-details',
-      arguments: receipt,
-    );
+    Navigator.pushNamed(context, '/receipt-details', arguments: receipt);
   }
-  
+
   void _showReceiptOptions(BuildContext context, Receipt receipt) {
     showModalBottomSheet(
       context: context,
@@ -249,26 +200,20 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
       },
     );
   }
-  
+
   void _shareReceipt(Receipt receipt) {
     final currencyFormat = NumberFormat.currency(symbol: '\$');
-    
     final receiptText = '''
 Receipt from ${receipt.merchant}
 Date: ${receipt.date}
 ${receipt.orderNumber.isNotEmpty ? 'Order #: ${receipt.orderNumber}\n' : ''}
 Items:
 ${receipt.items.map((item) => '- ${item.name}: ${currencyFormat.format(item.price)}').join('\n')}
-
 Total: ${currencyFormat.format(receipt.total)}
 ''';
-    
-    Share.share(
-      receiptText,
-      subject: 'Receipt from ${receipt.merchant}',
-    );
+    Share.share(receiptText, subject: 'Receipt from ${receipt.merchant}');
   }
-  
+
   void _showDeleteReceiptDialog(BuildContext context, Receipt receipt) {
     showDialog(
       context: context,
@@ -276,23 +221,15 @@ Total: ${currencyFormat.format(receipt.total)}
         title: const Text('Delete Receipt'),
         content: Text('Are you sure you want to delete the receipt from ${receipt.merchant}?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              
-              final receiptService = Provider.of<ReceiptExtractorService>(context, listen: false);
+              final receiptService = Provider.of<dynamic>(context, listen: false); // Use your actual service type here
               await receiptService.deleteReceipt(receipt.id);
-              
-              _loadReceipts();
-              
+              await _loadReceipts();
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Receipt deleted')),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Receipt deleted')));
               }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -302,33 +239,23 @@ Total: ${currencyFormat.format(receipt.total)}
       ),
     );
   }
-  
+
   void _showClearReceiptsDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear All Receipts'),
-        content: const Text(
-          'Are you sure you want to delete all receipts? This action cannot be undone.'
-        ),
+        content: const Text('Are you sure you want to delete all receipts? This action cannot be undone.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              
-              final receiptService = Provider.of<ReceiptExtractorService>(context, listen: false);
+              final receiptService = Provider.of<dynamic>(context, listen: false); // Use your actual service type here
               await receiptService.clearAllReceipts();
-              
-              _loadReceipts();
-              
+              await _loadReceipts();
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('All receipts cleared')),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All receipts cleared')));
               }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
