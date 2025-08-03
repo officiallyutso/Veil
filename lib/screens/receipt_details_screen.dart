@@ -120,6 +120,35 @@ class ReceiptDetailsScreen extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Receipt Information', style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 8),
+                    ListTile(
+                      title: const Text('Extracted Date'),
+                      subtitle: Text(DateFormat('MMMM d, yyyy, h:mm a').format(receipt.extractedAt)),
+                      leading: const Icon(Icons.access_time),
+                    ),
+                    ListTile(
+                      title: const Text('Source URL'),
+                      subtitle: Text(receipt.sourceUrl, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      leading: const Icon(Icons.link),
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: receipt.sourceUrl));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('URL copied to clipboard')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
