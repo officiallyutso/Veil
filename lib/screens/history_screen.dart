@@ -131,7 +131,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                             onTap: () {
-                              // Return the URL to the browser screen
                               Navigator.pop(context, item.url);
                             },
                             onLongPress: () {
