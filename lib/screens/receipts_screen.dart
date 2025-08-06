@@ -261,6 +261,19 @@ Total: ${currencyFormat.format(receipt.total)}
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Clear All'),
           ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final receiptService = Provider.of<dynamic>(context, listen: false);
+              await receiptService.clearAllReceipts();
+              await _loadReceipts();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All receipts deteled')));
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Clear All'),
+          ),
         ],
       ),
     );

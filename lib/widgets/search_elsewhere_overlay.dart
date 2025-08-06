@@ -101,6 +101,25 @@ class _SearchElsewhereOverlayState extends State<SearchElsewhereOverlay> with Si
                       ),
                     ],
                   ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Search Here',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          _animationController.reverse().then((_) {
+                            widget.onClose();
+                          });
+                        },
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   if (_isLoading)
                     const Center(
