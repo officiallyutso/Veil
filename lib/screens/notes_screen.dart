@@ -113,6 +113,45 @@ class _NotesScreenState extends State<NotesScreen> {
               },
             ),
           ),
+          Expanded(
+            child: Consumer<NoteService>(
+              builder: (context, noteService, child) {
+                final filteredNotes = _searchQuery.isEmpty
+                    ? noteService.notes
+                    : noteService.searchNotes(_searchQuery);
+                
+                if (filteredNotes.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _searchQuery.isEmpty
+                              ? 'No notes yet'
+                              : 'No results found for "$_searchQuery"',
+                        ),
+                        const SizedBox(height: 16),
+                        if (_searchQuery.isEmpty)
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.add),
+                            label: const Text('Create Note'),
+                            onPressed: () => _navigateToNoteEditor(context),
+                          ),
+                      ],
+                    ),
+                  );
+                }
+                
+                return ListView.builder(
+                  itemCount: filteredNotes.length,
+                  itemBuilder: (context, index) {
+                    final note = filteredNotes[index];
+                    return _buildNoteCard(context, note);
+                  },
+                );
+              },
+            ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
