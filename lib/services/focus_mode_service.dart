@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:veil/models/tab_model.dart';
 
 class FocusModeService extends ChangeNotifier {
   final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();

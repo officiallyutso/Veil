@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:flutter_gemini/src/models/candidates/candidates.dart';
 import 'package:html/parser.dart' as html_parser;

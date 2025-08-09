@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:html/dom.dart' as html_parser;
 import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:sentiment_dart/sentiment_dart.dart';

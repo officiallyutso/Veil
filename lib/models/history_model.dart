@@ -23,8 +23,6 @@ class HistoryItem {
     required this.id,
     required this.url,
     required this.title,
-    required this.description,
-    required this.favicon,
     this.favicon = '',
     DateTime? visitedAt,
   }) : this.visitedAt = visitedAt ?? DateTime.now();
