@@ -5,8 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:veil/core/app_theme.dart';
 import 'package:veil/core/routes.dart';
-import 'package:veil/features/browser/browser_screen.dart';
-import 'package:veil/models/settings_model.dart';
 import 'package:veil/services/bookmark_service.dart';
 import 'package:veil/services/history_service.dart';
 import 'package:veil/services/session_service.dart';

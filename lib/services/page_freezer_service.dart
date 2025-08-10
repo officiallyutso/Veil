@@ -1,10 +1,7 @@
-import 'package:flutter/material.dart';
+
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
-
 class FrozenPage {
   final String id;
   final String url;
